@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ลุงทุน ลงใจ — Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#18181f;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#e8e8f0;--text2:#8888a0;--text3:#55556a;--green:#00d4a0;--green-dim:rgba(0,212,160,0.12);--red:#ff5555;--red-dim:rgba(255,85,85,0.12);--amber:#ffb800;--amber-dim:rgba(255,184,0,0.1);--blue:#4f9cf9;--blue-dim:rgba(79,156,249,0.1);--purple:#a78bfa;--purple-dim:rgba(167,139,250,0.1);--mono:'IBM Plex Mono',monospace;--sans:'Sarabun',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+/* LOCK */
+#lockScreen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;}
+.lock-box{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:44px 40px;width:100%;max-width:380px;position:relative;z-index:1;}
+.lock-logo{font-family:var(--mono);font-size:14px;color:var(--text2);letter-spacing:0.05em;margin-bottom:32px;text-align:center;}
+.lock-logo span{color:var(--green);}
+.lock-label{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;}
+.lock-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:13px 16px;font-family:var(--mono);font-size:15px;color:var(--text);outline:none;margin-bottom:14px;transition:border-color 0.15s;}
+.lock-input:focus{border-color:var(--green);}
+.lock-input.err{border-color:var(--red);animation:shake 0.3s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+.lock-btn{width:100%;background:var(--green-dim);border:1px solid var(--green);border-radius:6px;padding:12px;font-family:var(--mono);font-size:12px;font-weight:500;color:var(--green);cursor:pointer;text-transform:uppercase;letter-spacing:0.08em;transition:all 0.15s;}
+.lock-btn:hover{background:rgba(0,212,160,0.22);}
+.lock-err{font-family:var(--mono);font-size:11px;color:var(--red);text-align:center;margin-top:12px;min-height:16px;}
+.lock-hint{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:center;margin-top:24px;letter-spacing:0.05em;}
+/* APP */
+#app{display:none;}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+header{border-bottom:1px solid var(--border);padding:20px 0;position:sticky;top:0;background:rgba(10,10,15,0.92);backdrop-filter:blur(12px);z-index:100;}
+.header-inner{display:flex;justify-content:space-between;align-items:center;}
+.logo{font-family:var(--mono);font-size:13px;color:var(--text2);letter-spacing:0.05em;}
+.logo span{color:var(--green);}
+.header-right{display:flex;align-items:center;gap:16px;}
+.last-update{font-family:var(--mono);font-size:11px;color:var(--text3);}
+.logout-btn{font-family:var(--mono);font-size:10px;color:var(--text3);background:transparent;border:1px solid var(--border);border-radius:4px;padding:4px 10px;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;transition:all 0.15s;}
+.logout-btn:hover{border-color:var(--border2);color:var(--text2);}
+/* FX badge in header */
+.fx-badge{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:4px 10px;}
+.fx-badge span{color:var(--amber);}
+.hero{padding:40px 0 32px;border-bottom:1px solid var(--border);}
+.hero-title{font-size:13px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+.hero-nums{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);}
+@media(max-width:900px){.hero-nums{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:500px){.hero-nums{grid-template-columns:repeat(2,1fr);}}
+.hero-num{background:var(--bg);padding:18px 20px;}
+.hero-num-label{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.hero-num-value{font-size:22px;font-family:var(--mono);font-weight:500;}
+.hero-num-sub{font-size:11px;font-family:var(--mono);margin-top:2px;}
+.pos{color:var(--green);}.neg{color:var(--red);}.muted{color:var(--text2);}
+.nav-tabs{display:flex;gap:2px;padding:16px 0;overflow-x:auto;}
+.tab-btn{font-family:var(--mono);font-size:12px;font-weight:500;padding:7px 16px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text2);cursor:pointer;text-transform:uppercase;letter-spacing:0.05em;transition:all 0.15s;white-space:nowrap;}
+.tab-btn:hover{border-color:var(--border2);color:var(--text);background:var(--bg3);}
+.tab-btn.active{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+.section{padding:24px 0;border-bottom:1px solid var(--border);display:none;}
+.section.active{display:block;}
+.section-title{font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:20px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.card-label{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.card-val{font-size:18px;font-family:var(--mono);font-weight:500;}
+.card-sub{font-size:11px;font-family:var(--mono);margin-top:2px;}
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+td{padding:9px 10px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--text);white-space:nowrap;}
+tr:hover td{background:var(--bg3);}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:3px;font-weight:500;text-transform:uppercase;}
+.badge-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,212,160,0.2);}
+.badge-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,85,85,0.2);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(79,156,249,0.2);}
+.badge-purple{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+.badge-muted{background:rgba(255,255,255,0.04);color:var(--text2);border:1px solid var(--border);}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;}
+@media(max-width:900px){.chart-grid-3{grid-template-columns:1fr 1fr;}}
+@media(max-width:640px){.chart-grid{grid-template-columns:1fr;}.chart-grid-3{grid-template-columns:1fr;}}
+.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.chart-box-title{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;}
+.chart-container{position:relative;height:220px;}
+.chart-full{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;}
+.chart-full-container{position:relative;height:260px;}
+.div-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
+/* avg cost table */
+.avg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:20px;}
+.avg-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;}
+.avg-asset{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--amber);}
+.avg-row{display:flex;justify-content:space-between;align-items:center;}
+.avg-key{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.avg-val{font-family:var(--mono);font-size:12px;color:var(--text);}
+.avg-diff{font-family:var(--mono);font-size:11px;}
+@media(max-width:600px){.cards{grid-template-columns:1fr 1fr;}}
+footer{padding:28px 0;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3);}
+</style>
+</head>
+<body>
+
+<div id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-logo"><span>//</span> ลุงทุน ลงใจ</div>
+    <div class="lock-label">รหัสผ่าน</div>
+    <input type="password" class="lock-input" id="pwInput" placeholder="กรอกรหัสผ่าน" autocomplete="current-password"/>
+    <button class="lock-btn" id="pwBtn">เข้าสู่ระบบ</button>
+    <div class="lock-err" id="pwErr"></div>
+    <div class="lock-hint">// ลุงทุน ลงใจ · private</div>
+  </div>
+</div>
+
+<div id="app">
+<header>
+  <div class="wrap header-inner">
+    <div class="logo"><span>//</span> ลุงทุน ลงใจ</div>
+    <div class="header-right">
+      <div class="fx-badge">USD/THB <span id="fxRate">—</span></div>
+      <div class="last-update" id="lastUpdate">กำลังโหลด...</div>
+      <button class="logout-btn" id="logoutBtn">ออกจากระบบ</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-title">// ภาพรวมพอร์ต</div>
+    <div class="hero-nums">
+      <div class="hero-num"><div class="hero-num-label">เงินลงทุน</div><div class="hero-num-value muted" id="hInvest">—</div><div class="hero-num-sub muted">THB</div></div>
+      <div class="hero-num"><div class="hero-num-label">มูลค่าปัจจุบัน</div><div class="hero-num-value muted" id="hValue">—</div><div class="hero-num-sub muted">THB</div></div>
+      <div class="hero-num"><div class="hero-num-label">กำไร/ขาดทุน (THB)</div><div class="hero-num-value muted" id="hPL">—</div><div class="hero-num-sub muted" id="hPLpct">—</div></div>
+      <div class="hero-num"><div class="hero-num-label">กำไร/ขาดทุน (USD)</div><div class="hero-num-value muted" id="hPLusd">—</div><div class="hero-num-sub muted">USD</div></div>
+      <div class="hero-num"><div class="hero-num-label">จากสินทรัพย์</div><div class="hero-num-value muted" id="hPLasset">—</div><div class="hero-num-sub muted">THB</div></div>
+      <div class="hero-num"><div class="hero-num-label">จากค่าเงิน</div><div class="hero-num-value muted" id="hPLfx">—</div><div class="hero-num-sub muted">THB</div></div>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="tab-btn active" data-tab="summary">สรุปพอร์ต</button>
+    <button class="tab-btn" data-tab="portfolio">รายการซื้อ</button>
+    <button class="tab-btn" data-tab="dividend">ปันผล</button>
+    <button class="tab-btn" data-tab="history">ประวัติพอร์ต</button>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="section active" id="tab-summary">
+    <div id="assetCountBanner" style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px 20px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;border-left:3px solid var(--green);">
+      <div style="font-family:var(--mono);font-size:36px;font-weight:500;color:var(--green);line-height:1;" id="hCount">—</div>
+      <div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px;">สินทรัพย์ในพอร์ต</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text2);" id="assetNames">—</div>
+      </div>
+    </div>
+    <div class="section-title">// สรุปรายสินทรัพย์</div>
+    <div id="summaryCards" class="cards"></div>
+    <div class="chart-grid">
+      <div class="chart-box"><div class="chart-box-title">// สัดส่วนประเภท</div><div class="chart-container"><canvas id="pieChart"></canvas></div></div>
+      <div class="chart-box"><div class="chart-box-title">// กำไร/ขาดทุน รายตัว (THB)</div><div class="chart-container"><canvas id="plChart"></canvas></div></div>
+    </div>
+    <div class="section-title">// รายละเอียดรายสินทรัพย์</div>
+    <div class="tbl-wrap" id="summaryTable"></div>
+    <div class="section-title" style="margin-top:28px;">// ต้นทุนเฉลี่ยต่อ asset</div>
+    <div class="avg-grid" id="avgGrid"></div>
+  </div>
+
+  <!-- PORTFOLIO -->
+  <div class="section" id="tab-portfolio">
+    <div class="section-title">// ทุกรายการที่ซื้อ</div>
+    <div class="tbl-wrap" id="portfolioTable"></div>
+  </div>
+
+  <!-- DIVIDEND -->
+  <div class="section" id="tab-dividend">
+    <div class="section-title">// ปันผลที่ได้รับ</div>
+    <div class="div-summary" id="divSummary"></div>
+    <div class="tbl-wrap" id="divTable"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section" id="tab-history">
+    <div class="section-title">// ประวัติมูลค่าพอร์ต</div>
+    <div class="chart-full"><div class="chart-box-title">// มูลค่าพอร์ต vs เงินลงทุน</div><div class="chart-full-container"><canvas id="histChart"></canvas></div></div>
+    <div class="chart-full" style="margin-top:14px;"><div class="chart-box-title">// กำไร/ขาดทุน รายเดือน (THB)</div><div class="chart-full-container"><canvas id="monthlyChart"></canvas></div></div>
+  </div>
+</div>
+<footer><div class="wrap">// ข้อมูลอัปเดตทุกครั้งที่รีเฟรช · แหล่งข้อมูล: google sheets</div></footer>
+</div>
+
+<script>
+// ====== เปลี่ยนรหัสผ่านได้ที่นี่ ======
+const PASSWORD = 'xyz2226';
+// =====================================
+
+const SK = 'ptf_ok';
+const isAuth = () => sessionStorage.getItem(SK) === '1';
+
+function tryUnlock() {
+  if (document.getElementById('pwInput').value === PASSWORD) {
+    sessionStorage.setItem(SK, '1');
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadAll();
+  } else {
+    const inp = document.getElementById('pwInput');
+    inp.classList.add('err');
+    document.getElementById('pwErr').textContent = 'รหัสผ่านไม่ถูกต้อง';
+    inp.value = '';
+    setTimeout(() => { inp.classList.remove('err'); document.getElementById('pwErr').textContent = ''; }, 2000);
+  }
+}
+
+document.getElementById('pwBtn').onclick = tryUnlock;
+document.getElementById('pwInput').onkeydown = e => { if (e.key === 'Enter') tryUnlock(); };
+document.getElementById('logoutBtn').onclick = () => { sessionStorage.removeItem(SK); location.reload(); };
+if (isAuth()) { document.getElementById('lockScreen').style.display = 'none'; document.getElementById('app').style.display = 'block'; }
+
+const SHEET_ID = '1Ep0M-BUkpmOFodxUzOlTs30bCn5yHBiAAwOv1q_F0-k';
+const SH = { asset:'04_Asset', portfolio:'01_Portfolio', history:'03_History', dividend:'06_Dividend' };
+const sheetUrl = n => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(n)}`;
+
+async function fetchCSV(n) {
+  const r = await fetch(sheetUrl(n));
+  if (!r.ok) throw new Error('โหลดไม่ได้: ' + n);
+  return parseCSV(await r.text());
+}
+
+function parseCSV(text) {
+  return text.trim().split('\n').map(line => {
+    const cols=[]; let cur=''; let inQ=false;
+    for (const c of line) {
+      if (c==='"') inQ=!inQ;
+      else if (c===',' && !inQ) { cols.push(cur.trim()); cur=''; }
+      else cur+=c;
+    }
+    cols.push(cur.trim()); return cols;
+  });
+}
+
+const clean = v => v ? v.replace(/^"|"$/g,'').replace(/,/g,'').trim() : '';
+const num = v => { const n=parseFloat(clean(v).replace(/[^0-9.\-]/g,'')); return isNaN(n)?null:n; };
+const fmt = (n,d=2) => n==null||isNaN(n) ? '—' : n.toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+const sign = (v,d=2) => { const n=num(v); if(n==null) return '<span class="muted">—</span>'; return `<span class="${n>=0?'pos':'neg'}">${n>=0?'+':''}${fmt(n,d)}</span>`; };
+const pct = v => { const n=num(v); if(n==null) return '<span class="muted">—</span>'; return `<span class="${n>=0?'pos':'neg'}">${n>=0?'+':''}${fmt(n)}%</span>`; };
+const typeBadge = t => { const s=clean(t).toLowerCase(); if(s.includes('crypto')) return '<span class="badge badge-purple">Crypto</span>'; if(s.includes('etf')) return '<span class="badge badge-green">ETF</span>'; return '<span class="badge badge-blue">หุ้น</span>'; };
+
+let pie=null, bar=null, hist=null, monthly=null;
+
+document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+});
+
+// ดึง FX rate จาก cell V2 ใน Sheet 01_Portfolio ตรงๆ ผ่าน GViz query
+async function getFXRate() {
+  try {
+    const rows = await fetchCSV('01_Portfolio');
+    for (let i = 0; i < rows.length - 1; i++) {
+      for (let j = 0; j < rows[i].length; j++) {
+        if (clean(rows[i][j]).includes('USD/THB')) {
+          // ค่าอยู่ใน row ถัดไป col เดียวกัน
+          const v = num(rows[i + 1]?.[j]);
+          if (v && v > 25 && v < 50) return v;
+        }
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function loadAll() {
+  if (!isAuth()) return;
+  document.getElementById('lastUpdate').textContent = 'กำลังโหลด...';
+  try {
+    const [asset, port, histData, div] = await Promise.all([
+      fetchCSV(SH.asset), fetchCSV(SH.portfolio), fetchCSV(SH.history), fetchCSV(SH.dividend)
+    ]);
+
+    // FX rate จาก cell V2 Sheet 01_Portfolio
+    const fx = await getFXRate();
+    document.getElementById('fxRate').textContent = fx ? fmt(fx,2) : '—';
+
+    renderHero(port);
+    renderSummary(asset, port);
+    renderPortfolio(port);
+    renderHistory(histData);
+    renderDividend(div);
+
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent = `อัปเดตเมื่อ ${now.toLocaleDateString('th-TH')} ${now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} น.`;
+  } catch(e) {
+    document.getElementById('lastUpdate').textContent = 'โหลดไม่ได้ — ' + e.message;
+  }
+}
+
+function renderHero(rows) {
+  if (!rows||rows.length<2) return;
+  const data = rows.slice(1).filter(r=>clean(r[0]));
+  let plUSD=0, plTHB=0, plAsset=0, plFX=0, invest=0, value=0;
+  data.forEach(r => {
+    plUSD   += num(r[9])  || 0;
+    plTHB   += num(r[10]) || 0;
+    plAsset += num(r[11]) || 0;
+    plFX    += num(r[12]) || 0;
+    invest  += num(r[6])  || 0;
+    value   += num(r[14]) || 0;
+  });
+  const pctRet = invest ? (plTHB/invest*100) : 0;
+
+  document.getElementById('hInvest').textContent = fmt(invest,0);
+  document.getElementById('hInvest').className = 'hero-num-value muted';
+  document.getElementById('hValue').textContent = fmt(value,0);
+  document.getElementById('hValue').className = 'hero-num-value muted';
+  const plEl=document.getElementById('hPL'); plEl.textContent=(plTHB>=0?'+':'')+fmt(plTHB,0); plEl.className='hero-num-value '+(plTHB>=0?'pos':'neg');
+  const pEl=document.getElementById('hPLpct'); pEl.textContent=(pctRet>=0?'+':'')+fmt(pctRet)+'%'; pEl.className='hero-num-sub '+(pctRet>=0?'pos':'neg');
+  const uEl=document.getElementById('hPLusd'); uEl.textContent=(plUSD>=0?'+':'')+fmt(plUSD); uEl.className='hero-num-value '+(plUSD>=0?'pos':'neg');
+  const aEl=document.getElementById('hPLasset'); aEl.textContent=(plAsset>=0?'+':'')+fmt(plAsset,0); aEl.className='hero-num-value '+(plAsset>=0?'pos':'neg');
+  const fEl=document.getElementById('hPLfx'); fEl.textContent=(plFX>=0?'+':'')+fmt(plFX,0); fEl.className='hero-num-value '+(plFX>=0?'pos':'neg');
+  const uniqueAssets = [...new Set(data.map(r=>clean(r[0])))];
+  document.getElementById('hCount').textContent = uniqueAssets.length;
+  document.getElementById('hCount').className = '';
+  if (document.getElementById('assetNames')) {
+    document.getElementById('assetNames').textContent = uniqueAssets.join(' · ');
+  }
+}
+
+function renderSummary(rows, portRows) {
+  if (!rows||rows.length<2) return;
+  const data = rows.slice(1).filter(r=>clean(r[0]));
+
+  const srt=[...data].sort((a,b)=>(num(b[5])||0)-(num(a[5])||0));
+  const best=srt[0], worst=srt[srt.length-1];
+  let inv=0,val=0;
+  data.forEach(r=>{inv+=num(r[2])||0;val+=num(r[3])||0;});
+
+  document.getElementById('summaryCards').innerHTML=`
+    <div class="card"><div class="card-label">กำไรสูงสุด</div><div class="card-val pos">${clean(best[0])}</div><div class="card-sub pos">+${fmt(num(best[5]))}%</div></div>
+    <div class="card"><div class="card-label">ขาดทุนมากสุด</div><div class="card-val neg">${clean(worst[0])}</div><div class="card-sub neg">${fmt(num(worst[5]))}%</div></div>
+    <div class="card"><div class="card-label">ลงทุนทั้งหมด</div><div class="card-val muted">${fmt(inv,0)}</div><div class="card-sub muted">THB</div></div>
+    <div class="card"><div class="card-label">มูลค่าพอร์ต</div><div class="card-val muted">${fmt(val,0)}</div><div class="card-sub muted">THB</div></div>`;
+
+  const tm={};
+  data.forEach(r=>{const t=clean(r[1]);tm[t]=(tm[t]||0)+(num(r[3])||0);});
+  const tl=Object.keys(tm),tc=tl.map(t=>t.toLowerCase().includes('crypto')?'#a78bfa':t.toLowerCase().includes('etf')?'#00d4a0':'#4f9cf9');
+  if(pie)pie.destroy();
+  pie=new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{labels:tl,datasets:[{data:tl.map(k=>tm[k]),backgroundColor:tc,borderWidth:1,borderColor:'#111118'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#8888a0',font:{family:"'IBM Plex Mono'",size:11},padding:12,boxWidth:10}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.parsed/(val||1)*100)+'%'}}}}});
+
+  const al=data.map(r=>clean(r[0])),pv=data.map(r=>num(r[4])||0);
+  if(bar)bar.destroy();
+  bar=new Chart(document.getElementById('plChart'),{type:'bar',data:{labels:al,datasets:[{data:pv,backgroundColor:pv.map(v=>v>=0?'#00d4a0':'#ff5555'),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>(ctx.parsed.y>=0?'+':'')+fmt(ctx.parsed.y)+' THB'}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8888a0',font:{family:"'IBM Plex Mono'",size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8888a0',font:{family:"'IBM Plex Mono'",size:11},callback:v=>fmt(v,0)}}}}});
+
+  document.getElementById('summaryTable').innerHTML=`<table><thead><tr>
+    <th>สินทรัพย์</th><th>ประเภท</th><th>ลงทุน (บาท)</th><th>มูลค่า (บาท)</th>
+    <th>กำไร/ขาดทุน (บาท)</th><th>ผลตอบแทน (%)</th><th>สัดส่วน</th>
+  </tr></thead><tbody>${data.map(r=>`<tr>
+    <td style="font-weight:500">${clean(r[0])}</td>
+    <td>${typeBadge(r[1])}</td>
+    <td>${fmt(num(r[2]),0)}</td>
+    <td>${fmt(num(r[3]),0)}</td>
+    <td>${sign(r[4],0)}</td>
+    <td>${pct(r[5])}</td>
+    <td class="muted">${clean(r[6])}</td>
+  </tr>`).join('')}</tbody></table>`;
+
+  // ===== ต้นทุนเฉลี่ยต่อ asset จาก portfolio rows =====
+  if (!portRows||portRows.length<2) return;
+  const pdata = portRows.slice(1).filter(r=>clean(r[0]));
+  // group by asset: 0=asset, 3=buyPrice, 4=costUSD, 6=costTHB, 7=curPrice
+  const assetMap = {};
+  pdata.forEach(r => {
+    const a = clean(r[0]);
+    if (!assetMap[a]) assetMap[a] = { costUSD:0, costTHB:0, curPrice:num(r[7]), trades:0 };
+    assetMap[a].costUSD += num(r[4]) || 0;
+    assetMap[a].costTHB += num(r[6]) || 0;
+    assetMap[a].curPrice = num(r[7]); // latest
+    assetMap[a].avgBuy = assetMap[a].avgBuy || 0; // will calc weighted
+    assetMap[a].trades += 1;
+  });
+
+  // weighted avg buy price per asset
+  const assetAvg = {};
+  pdata.forEach(r => {
+    const a = clean(r[0]);
+    if (!assetAvg[a]) assetAvg[a] = { totalCost:0, totalQty:0, curPrice:0 };
+    assetAvg[a].totalCost += (num(r[3])||0) * (num(r[2])||0); // price * qty (approx)
+    assetAvg[a].totalQty += num(r[2]) || 0;
+    assetAvg[a].curPrice = num(r[7]) || 0;
+    assetAvg[a].costTHB = (assetAvg[a].costTHB || 0) + (num(r[6]) || 0);
+    assetAvg[a].trades = (assetAvg[a].trades || 0) + 1;
+  });
+
+  // get avg from dashboard sheet col (ราคาเฉลี่ย col 5 of dashboard)
+  // instead use simple: costUSD / sum(qty)
+  document.getElementById('avgGrid').innerHTML = Object.entries(assetAvg).map(([asset, d]) => {
+    const avgPrice = d.totalQty ? d.totalCost / d.totalQty : 0;
+    const cur = d.curPrice;
+    const diff = avgPrice ? ((cur - avgPrice) / avgPrice * 100) : 0;
+    return `<div class="avg-card">
+      <div class="avg-asset">${asset}</div>
+      <div class="avg-row"><span class="avg-key">ราคาเฉลี่ยที่ซื้อ</span><span class="avg-val">$${fmt(avgPrice)}</span></div>
+      <div class="avg-row"><span class="avg-key">ราคาปัจจุบัน</span><span class="avg-val">$${fmt(cur)}</span></div>
+      <div class="avg-row"><span class="avg-key">ต่างจากต้นทุน</span><span class="avg-diff ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${fmt(diff)}%</span></div>
+      <div class="avg-row"><span class="avg-key">ลงทุนรวม (THB)</span><span class="avg-val">${fmt(d.costTHB,0)}</span></div>
+      <div class="avg-row"><span class="avg-key">จำนวนครั้งที่ซื้อ</span><span class="avg-val muted">${d.trades} ครั้ง</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderPortfolio(rows) {
+  if (!rows||rows.length<2) return;
+  const data=rows.slice(1).filter(r=>clean(r[0]));
+  document.getElementById('portfolioTable').innerHTML=`<table><thead><tr>
+    <th>สินทรัพย์</th><th>วันที่</th>
+    <th>ราคาที่ซื้อ (USD)</th><th>ต้นทุน (THB)</th>
+    <th>ราคาปัจจุบัน (USD)</th><th>มูลค่าปัจจุบัน (THB)</th>
+    <th>กำไร/ขาดทุน (USD)</th>
+    <th>กำไร/ขาดทุน (THB)</th>
+    <th>จากสินทรัพย์ (THB)</th>
+    <th>จากค่าเงิน (THB)</th>
+    <th>ผลตอบแทน (%)</th>
+  </tr></thead><tbody>${data.map(r=>`<tr>
+    <td style="font-weight:500;color:var(--amber)">${clean(r[0])}</td>
+    <td class="muted">${clean(r[1])}</td>
+    <td>${fmt(num(r[3]))}</td>
+    <td>${fmt(num(r[6]),0)}</td>
+    <td>${fmt(num(r[7]))}</td>
+    <td>${fmt(num(r[14]),0)}</td>
+    <td>${sign(r[9])}</td>
+    <td>${sign(r[10],0)}</td>
+    <td>${sign(r[11],0)}</td>
+    <td>${sign(r[12],0)}</td>
+    <td>${pct(r[13])}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function renderHistory(rows) {
+  if (!rows||rows.length<2) return;
+  const data=rows.slice(1).filter(r=>clean(r[0]));
+
+  // Line chart
+  if(hist)hist.destroy();
+  hist=new Chart(document.getElementById('histChart'),{type:'line',data:{labels:data.map(r=>clean(r[0])),datasets:[
+    {label:'มูลค่าพอร์ต',data:data.map(r=>num(r[1])),borderColor:'#00d4a0',backgroundColor:'rgba(0,212,160,0.06)',fill:true,tension:0.3,pointRadius:2,pointHoverRadius:5,borderWidth:2},
+    {label:'เงินที่ลงทุนสะสม',data:data.map(r=>num(r[2])),borderColor:'#4f9cf9',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,borderDash:[5,4],borderWidth:1.5}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#8888a0',font:{family:"'IBM Plex Mono'",size:11},boxWidth:12,padding:14}},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y,0)+' THB'}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8888a0',font:{size:10,family:"'IBM Plex Mono'"},maxTicksLimit:8,maxRotation:0}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8888a0',font:{size:10,family:"'IBM Plex Mono'"},callback:v=>fmt(v,0)}}}}});
+
+  // Monthly P&L bar chart — group by month
+  const monthMap = {};
+  data.forEach(r => {
+    const d = clean(r[0]);
+    if (!d) return;
+    const month = d.substring(0, 7); // "2026-03"
+    const plVal = num(r[3]) || 0;
+    monthMap[month] = plVal; // P&L ของเดือนนั้น (ค่าล่าสุด)
+  });
+  const months = Object.keys(monthMap).sort();
+  const plVals = months.map(m => monthMap[m]);
+
+  if(monthly)monthly.destroy();
+  monthly=new Chart(document.getElementById('monthlyChart'),{type:'bar',data:{labels:months,datasets:[{label:'กำไร/ขาดทุน (THB)',data:plVals,backgroundColor:plVals.map(v=>v>=0?'rgba(0,212,160,0.7)':'rgba(255,85,85,0.7)'),borderColor:plVals.map(v=>v>=0?'#00d4a0':'#ff5555'),borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>(ctx.parsed.y>=0?'+':'')+fmt(ctx.parsed.y,0)+' THB'}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8888a0',font:{size:10,family:"'IBM Plex Mono'"},maxRotation:0}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8888a0',font:{size:10,family:"'IBM Plex Mono'"},callback:v=>fmt(v,0)}}}}});
+}
+
+function renderDividend(rows) {
+  if (!rows||rows.length<2) return;
+  const data=rows.slice(1).filter(r=>clean(r[0]));
+  let tot=0;const by={};
+  data.forEach(r=>{const t=num(r[6])||0;tot+=t;const a=clean(r[1]);by[a]=(by[a]||0)+t;});
+  document.getElementById('divSummary').innerHTML=`<div class="card"><div class="card-label">รวมปันผลทั้งหมด</div><div class="card-val pos">${fmt(tot)}</div><div class="card-sub muted">THB</div></div>${Object.entries(by).map(([k,v])=>`<div class="card"><div class="card-label">${k}</div><div class="card-val pos">${fmt(v)}</div><div class="card-sub muted">THB</div></div>`).join('')}`;
+  // ลบ Yield % ออก
+  document.getElementById('divTable').innerHTML=`<table><thead><tr>
+    <th>วันที่</th><th>สินทรัพย์</th><th>จำนวนหุ้น</th><th>ปันผล/หุ้น (USD)</th><th>รวม (USD)</th><th>อัตราแลกเปลี่ยน</th><th>รวม (บาท)</th>
+  </tr></thead><tbody>${data.map(r=>`<tr>
+    <td class="muted">${clean(r[0])}</td>
+    <td style="font-weight:500;color:var(--amber)">${clean(r[1])}</td>
+    <td>${clean(r[2])}</td>
+    <td class="pos">${fmt(num(r[3]),4)}</td>
+    <td class="pos">${fmt(num(r[4]),2)}</td>
+    <td class="muted">${fmt(num(r[5]),2)}</td>
+    <td class="pos">${fmt(num(r[6]),2)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+if (isAuth()) loadAll();
+</script>
+</body>
+</html>
